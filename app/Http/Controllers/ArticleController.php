@@ -12,20 +12,23 @@ class ArticleController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Json
      */
     public function index(Request $request)
     {
+        //Valido los input del formulario
         $validator = Validator::make($request->all(), [
             'page' => 'nullable|integer|min:1',
             'limit' => 'nullable|integer|min:1',
             'status' => 'nullable|in:active,inactive'
         ]);
 
+        //Si falla retorno los mensajes de error
         if ($validator->fails()) {
             return json_encode($validator->errors());
         }
 
+        //Configuro status en booleano
         if($request->has('status'))
         {
             if($request->get('status') == 'active')
@@ -37,6 +40,8 @@ class ArticleController extends Controller
                 $status = 0;
             }
         }
+
+        //Filtro por los requisitos que puedan haber llegado en el request
         if($request->has('page'))
         {
             if($request->has('status') && $request->has('limit'))
@@ -85,10 +90,11 @@ class ArticleController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Json
      */
     public function store(Request $request)
     {
+        //Valido los input del formulario
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'price' => 'required|numeric|min:0.1',
@@ -96,10 +102,12 @@ class ArticleController extends Controller
             'qty' => 'required|integer|min:1|max:999999'
         ]);
 
+        //Si falla retorno los mensajes de error
         if ($validator->fails()) {
             return json_encode($validator->errors());
         }
 
+        //Configuro status en booleano
         if($request->get('status') == 'active')
         {
             $status = true;
@@ -114,6 +122,7 @@ class ArticleController extends Controller
         $article->status = $status;
         $article->qty = $request->get('qty');
 
+        //Si no se guardo en la base de datos devuelvo un error
         if(!$article->save())
         {
             $response['message'] = "Error al guardar el articulo en la base de datos.";
@@ -128,11 +137,13 @@ class ArticleController extends Controller
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Json
      */
     public function show($id)
     {
         $article = Article::find($id);
+
+        //Si no encuentra el articulo solicitado devuelvo mensaje de no encontrado
         if($article == null)
         {
             $response['message'] = "Articulo no encontrado.";
@@ -147,16 +158,19 @@ class ArticleController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Json
      */
     public function update(Request $request, $id)
     {
+        //Si no encuentra el articulo solicitado devuelvo mensaje de no encontrado
         $article = Article::find($id);
         if($article == null)
         {
             $response['message'] = "Articulo no encontrado.";
             return json_encode($response);
         }
+
+        //Valido los input del formulario
         $validator = Validator::make($request->all(), [
             'title' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0.1',
@@ -164,10 +178,12 @@ class ArticleController extends Controller
             'qty' => 'nullable|integer|min:1|max:999999'
         ]);
 
+        //Si falla devuelvo los mensajes de error"
         if ($validator->fails()) {
             return json_encode($validator->errors());
         }
 
+        //Seteo status en booleano
         if($request->has('status'))
         {
             if($request->get('status') == 'active')
@@ -183,7 +199,7 @@ class ArticleController extends Controller
             }
         }
 
-
+        //Si no logra actualizarse en base de datos devuelvo mensaje de error
         if(!$article->update($request->all()))
         {
             $response['message'] = "Error al actualizar el articulo en la base de datos.";
@@ -198,7 +214,7 @@ class ArticleController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Json
      */
     public function destroy($id)
     {
@@ -219,6 +235,12 @@ class ArticleController extends Controller
         return json_encode($response);
     }
 
+    /**
+     * Cuento la cantidad de articulos en base a su status
+     *
+     * @param String $status
+     * @return Json
+     */
     public function listByStatus($status)
     {
         if($status == 'active')
